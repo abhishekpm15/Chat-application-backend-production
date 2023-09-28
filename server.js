@@ -63,8 +63,9 @@ const model2 = mongoose.model("UserFriends", UserFriends);
 const model3 = mongoose.model("Messages", Messages);
 
 app.get("/", (req, res) => {
-  res.send("Hello");
+  res.sendFile(path.join(__dirname, "index.html"));
 });
+
 
 app.get("/get-friends/:user_id", (req, res) => {
   // console.log("request got");
