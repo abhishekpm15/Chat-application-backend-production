@@ -3,11 +3,26 @@ const bodyparser = require("body-parser");
 const app = express();
 const cors = require("cors");
 const mongoose = require("mongoose");
+// const http = require('http')
+// const { Server } = require("socket.io");
+
+// const server = http.createServer(app);
+// const io = new Server(server, { cors:{origin: "http://localhost:3000" , methods :["GET", "POST"]} });
+
 app.use(bodyparser.urlencoded({ extended: true }));
 app.use(cors());
 app.use(express.json());
 const path = require("path");
-require('dotenv').config();
+require("dotenv").config();
+
+
+// io.on("connection", (socket)=>{
+//   console.log("user connected " , socket.id)
+//   socket.on("disconnect",()=>{
+//     console.log("disconnected");
+//   })
+// })
+ 
 mongoose
   .connect(
     `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.tn0wwt0.mongodb.net/?retryWrites=true&w=majority`,
@@ -65,7 +80,6 @@ const model3 = mongoose.model("Messages", Messages);
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
-
 
 app.get("/get-friends/:user_id", (req, res) => {
   // console.log("request got");
@@ -171,77 +185,77 @@ app.post("/register/:user_id", (req, res) => {
 });
 
 app.post("/message/send-message", async (req, res) => {
-  console.log(req.body);
   try {
-    const senderResult = await model3.findOne({
+    let senderResult = await model3.findOne({
       sender_id: req.body.sender_id,
     });
 
-    if (senderResult) {
-      console.log("inside senderResult");
-
-      const friendResult = await model3.findOne({
+    if (!senderResult) {
+      senderResult = new model3({
+        sender_id: req.body.sender_id,
+        friends: req.body.friends,
+      });
+      await senderResult
+        .save()
+        .then((response) => {
+          res.send(req.body.friends.messages.text);
+          console.log(response);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    } else {
+      let friendResult = await model3.findOne({
         "friends.id": req.body.friends.id,
       });
-
-      console.log(friendResult);
-
-      if (friendResult) {
-        console.log("inside friendresult");
-
-        model3
-          .find({ "friends.messages": { $exists: true } })
-          .then((result) => {
-            console.log(result);
-            result.forEach((document) => {
-              document.friends.forEach((friend) => {
-                if (friend.id === req.body.friends.id) {
-                  if (!Array.isArray(friend.messages)) {
-                    friend.messages = [];
-                  }
-                  friend.messages.push({
-                    text: req.body.friends.messages[0].text,
-                    timestamps: new Date(),
-                    sent: req.body.friends.messages[0].sent,
-                  });
-                }
-              });
-              document
-                .save()
-                .catch((err) => {
-                  console.error("Error saving document:", err);
-                });
-            });
-            res.send(req.body.friends.messages[0]);
+      if (!friendResult) {
+        console.log("not found");
+        await senderResult.friends.push({
+          id: req.body.friends.id,
+          messages: [
+            {
+              text: req.body.friends.messages.text,
+              timestamps: new Date(),
+              sent: req.body.friends.messages.sent,
+            },
+          ],
+        });
+        senderResult
+          .save()
+          .then((response) => {
+            console.log(response);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      } else {
+        const receiverFriend = senderResult.friends.find(
+          (friend) => friend.id === req.body.friends.id
+        );
+        await receiverFriend.messages.push({
+          text: req.body.friends.messages.text,
+          timestamps: new Date(),
+          sent: req.body.friends.messages.sent,
+        });
+        await senderResult
+          .save()
+          .then((response) => {
+            res.send(req.body.friends.messages.text);
+            console.log(response);
           })
           .catch((err) => {
             console.log(err);
           });
       }
-    } else {
-      const data = new model3(req.body);
-      data
-        .save()
-        .then((result) => {
-          res.send(req.body.friends.messages[0]);
-          console.log("data created");
-          console.log(result);
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-      console.log("No data");
+      console.log("found");
     }
   } catch (err) {
     console.log(err);
-    res.status(500).json({ message: "Internal server error" });
   }
 });
 
 app.post("/message/get-messages", async (req, res) => {
   const { sender_id, friend_id } = req.body;
-  console.log(sender_id,friend_id);
-
   try {
     const document = await model3.findOne({
       sender_id: sender_id,
@@ -251,7 +265,9 @@ app.post("/message/get-messages", async (req, res) => {
     if (!document) {
       return res.status(404).json({ message: "Document not found" });
     }
-    const messages = document.friends.find((friend) => friend.id === friend_id)?.messages || [];
+    const messages =
+      document.friends.find((friend) => friend.id === friend_id)?.messages ||
+      [];
     res.json(messages);
   } catch (error) {
     console.error(error);
@@ -259,7 +275,8 @@ app.post("/message/get-messages", async (req, res) => {
   }
 });
 
-
 app.listen(3001, () => {
   console.log("listening on port 3001");
 });
+
+
