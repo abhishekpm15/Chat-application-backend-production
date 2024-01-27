@@ -126,7 +126,7 @@ app.post("/add-friends", async (req, res) => {
 app.get("/get-user/:user_name", (req, res) => {
   console.log(req.params.user_name);
   model
-    .find({ email: req.params.user_name })
+    .find({ email: {$regex:req.params.user_name}})
     .then((result) => {
       res.send(result);
       if (result.length > 0) {
@@ -140,8 +140,13 @@ app.get("/get-user/:user_name", (req, res) => {
     });
 });
 
+var corsOptions = {
+  origin: 'http://localhostL3000',
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}
 
-app.post("/register/:user_id", (req, res) => {
+
+app.post("/register/:user_id",cors(corsOptions), (req, res,next) => {
   console.log(req.body);
   const searchId = req.params.user_id;
   console.log(searchId);
@@ -267,14 +272,14 @@ const server = app.listen(3001, () => {
   console.log("listening on port 3001");
 });
 
-app.get("/get-all-friends",async(req,res)=>{
-    await model.find().then(response=>{
-    res.send(response)
-    console.log('all friends',response)
-  }).catch(err=>{
-    console.log(err);
-  })
-})
+// app.get("/get-all-friends",async(req,res)=>{
+//     await model.find().then(response=>{
+//     res.send(response)
+//     console.log('all friends',response)
+//   }).catch(err=>{
+//     console.log(err);
+//   })
+// })
 
 const io = require('socket.io')(server,{
   pingTimeout:60000,
