@@ -142,7 +142,7 @@ app.get("/get-user/:user_name", (req, res) => {
 });
 
 var corsOptions = {
-  origin: 'http://localhost:3000',
+  origin: 'https://chat-application-frontend-production.vercel.app/',
   optionsSuccessStatus: 200
 }
 
@@ -285,7 +285,7 @@ const server = app.listen(port, () => {
 const io = require('socket.io')(server,{
   pingTimeout:60000,
   cors:{
-    origin:"http://localhost:3000",
+    origin:"https://chat-application-frontend-production.vercel.app/",
   },
 })
 
