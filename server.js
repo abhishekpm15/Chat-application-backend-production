@@ -10,6 +10,8 @@ app.use(express.json());
 const path = require("path");
 require("dotenv").config();
 
+var port = process.env.PORT || 3001;
+
 mongoose
   .connect(
     `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.tn0wwt0.mongodb.net/?retryWrites=true&w=majority`,
@@ -140,7 +142,7 @@ app.get("/get-user/:user_name", (req, res) => {
 });
 
 var corsOptions = {
-  origin: 'http://localhostL3000',
+  origin: 'http://localhost:3000',
   optionsSuccessStatus: 200
 }
 
@@ -267,7 +269,7 @@ app.post("/message/get-messages", async (req, res) => {
   }
 });
 
-const server = app.listen(3001, () => {
+const server = app.listen(port, () => {
   console.log("listening on port 3001");
 });
 
