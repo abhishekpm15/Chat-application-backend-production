@@ -69,7 +69,6 @@ app.get("/", (req, res) => {
 });
 
 app.get("/get-friends/:user_id", (req, res) => {
-  // console.log("request got");
   model2
     .find({ id: req.params.user_id })
     .then((result) => {
@@ -142,7 +141,7 @@ app.get("/get-user/:user_name", (req, res) => {
 
 var corsOptions = {
   origin: 'http://localhostL3000',
-  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+  optionsSuccessStatus: 200
 }
 
 
